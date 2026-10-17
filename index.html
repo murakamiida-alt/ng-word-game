@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>NGワードゲーム</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;color:#111;background:#fff;font-synthesis:none}
+*{box-sizing:border-box}html,body{height:100%;margin:0}button,input{font:inherit}button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.app{height:100dvh;min-height:260px;display:flex;flex-direction:column;padding:calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 12px) calc(env(safe-area-inset-bottom) + 12px) calc(env(safe-area-inset-left) + 12px);gap:6px}
+.display{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:clamp(16px,8vh,56px) 2px;user-select:none}
+.word{font-weight:900;line-height:1.1;text-align:center;white-space:nowrap;max-width:100%;letter-spacing:-.035em}
+.hidden-message{font-size:clamp(20px,5vw,38px);font-weight:700;color:#666}
+.controls{display:flex;gap:8px;width:100%;align-items:stretch;flex-shrink:0;height:clamp(44px,12vh,58px)}
+.controls input{min-width:0;flex:1;padding:0 12px;border:1px solid #bfc3c9;border-radius:10px;background:#fff;color:#111;outline-offset:2px;font-size:16px}
+.controls button{padding:0 clamp(10px,2vw,22px);border-radius:10px;border:1px solid #c4c7cc;color:#111;background:#f8f8f8;font-size:clamp(13px,2.4vw,16px);font-weight:700;white-space:nowrap}
+.controls button:active{background:#e8e8e8}.controls button:focus-visible{outline:3px solid #333;outline-offset:2px}
+#toggle{min-width:66px}
+@media (orientation:portrait){.display{padding:20px 2px}.controls{flex-wrap:wrap;height:auto}.controls input{flex-basis:100%;height:48px}.controls button{height:48px;flex:1}.app{min-height:320px}}
+@media (prefers-reduced-motion:no-preference){button{transition:background .1s ease}}
+</style>
+</head>
+<body>
+<main class="app">
+  <section class="display" id="display" aria-live="polite">
+    <div class="word" id="word">ありがとう</div>
+    <div class="hidden-message" id="hiddenMessage" hidden>非表示</div>
+  </section>
+  <div class="controls">
+    <input id="entry" aria-label="NGワードを入力" type="text" value="ありがとう" maxlength="35" autocomplete="off" spellcheck="false" placeholder="NGワードを入力">
+    <button id="random" type="button">⇄ ランダム</button>
+    <button id="toggle" type="button" aria-pressed="false">隠す</button>
+  </div>
+</main>
+<script>
+(()=>{
+  'use strict';
+  const words=['ありがとう','やばい','なんで？','マジで？','ちなみに','なるほど','すごい','絶対','ごめん','でも','たしかに','普通に','本当に？','そうだね','いいね','だよね','ちょっと','わかる','そうそう','えー','はい','いや','なんか','つまり','そうなの？','大丈夫','まさか','めっちゃ','うそ','もちろん','多分','とりあえず','そういえば','ほんと？','どうして？','そうですね','お願いします','確かに','すみません','そうなんだ'];
+  const display=document.getElementById('display'), word=document.getElementById('word'), entry=document.getElementById('entry'), random=document.getElementById('random'), toggle=document.getElementById('toggle'), hiddenMessage=document.getElementById('hiddenMessage');
+  let hidden=false;
+  const measure=document.createElement('canvas').getContext('2d');
+  function fit(){
+    if(hidden)return;
+    const value=word.textContent||'NGワード';
+    const style=getComputedStyle(word);
+    const family=style.fontFamily;
+    const weight=style.fontWeight;
+    const availWidth=Math.max(50,display.clientWidth-8);
+    const availHeight=Math.max(40,display.clientHeight-4);
+    let lo=8,hi=Math.min(360,availHeight/.98);
+    for(let i=0;i<18;i++){
+      const mid=(lo+hi)/2;
+      measure.font=`${weight} ${mid}px ${family}`;
+      // A bit of safety space for Japanese font differences and letter spacing.
+      const width=measure.measureText(value).width;
+      if(width<=availWidth*.96 && mid*1.12<=availHeight)lo=mid;else hi=mid;
+    }
+    word.style.fontSize=`${Math.max(8,lo)}px`;
+  }
+  function render(){word.textContent=entry.value.trim()||'NGワード';word.hidden=hidden;hiddenMessage.hidden=!hidden;toggle.textContent=hidden?'表示':'隠す';toggle.setAttribute('aria-pressed',String(hidden));if(!hidden)requestAnimationFrame(fit)}
+  entry.addEventListener('input',()=>{hidden=false;render()});
+  entry.addEventListener('keydown',e=>{if(e.key==='Enter')entry.blur()});
+  random.addEventListener('click',()=>{const last=entry.value;let next;do{next=words[Math.floor(Math.random()*words.length)]}while(next===last&&words.length>1);entry.value=next;hidden=false;entry.blur();render()});
+  toggle.addEventListener('click',()=>{hidden=!hidden;entry.blur();render()});
+  window.addEventListener('resize',()=>requestAnimationFrame(fit));
+  if('ResizeObserver' in window)new ResizeObserver(()=>requestAnimationFrame(fit)).observe(display);
+  document.fonts?.ready.then(fit);
+  render();
+})();
+</script>
+</body>
+</html>
